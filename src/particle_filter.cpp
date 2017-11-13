@@ -30,12 +30,14 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
   particles.resize(num_particles);
   weights.resize(num_particles);
   
-  default_random_engine gen;
+  random_device rd;
+  default_random_engine gen(rd());
   normal_distribution<double> dist_x(x, std[0]);
 	normal_distribution<double> dist_y(y, std[1]);
 	normal_distribution<double> dist_theta(theta, std[2]);
 
   for (int i=0 ; i<num_particles ; i++ ) {
+    particles[i].id = i;
     particles[i].x = dist_x(gen);
     particles[i].y = dist_y(gen);
     particles[i].theta = dist_theta(gen);
@@ -65,8 +67,8 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
       particles[i].y += (velocity * delta_t * sin(theta));
     }
     else {
-      particles[i].x += velocity / yaw_rate * (sin(theta + yaw_rate*delta_t) - sin(theta));
-      particles[i].y += velocity / yaw_rate * (cos(theta) - cos(theta + yaw_rate*delta_t));
+      particles[i].x += (velocity/yaw_rate) * (sin(theta + yaw_rate*delta_t) - sin(theta));
+      particles[i].y += (velocity/yaw_rate) * (cos(theta) - cos(theta + yaw_rate*delta_t));
       particles[i].theta += yaw_rate*delta_t;
     }
     // Add random Gaussian noise
