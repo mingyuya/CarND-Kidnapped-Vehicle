@@ -36,7 +36,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	normal_distribution<double> dist_y(y, std[1]);
 	normal_distribution<double> dist_theta(theta, std[2]);
 
-  for (int i=0 ; i<num_particles ; i++ ) {
+  for (int i=0 ; i<num_particles ; ++i ) {
     particles[i].id = i;
     particles[i].x = dist_x(gen);
     particles[i].y = dist_y(gen);
@@ -59,7 +59,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
   normal_distribution<double> dist_y(0, std_pos[1]);
   normal_distribution<double> dist_theta(0, std_pos[2]);
 
-  for (int i=0 ; i<num_particles ; i++ ) {
+  for (int i=0 ; i<num_particles ; ++i ) {
     double theta = particles[i].theta;
     // Update state
     if (fabs(yaw_rate) < 0.00001) {
@@ -86,15 +86,15 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 
   double min_distance;
   double distance;
-  int id = 0;
+  int id;
 
   LandmarkObs obs, pred;
 
-  for (int i=0 ; i<observations.size(); i++) {
+  for (int i=0 ; i<observations.size(); ++i) {
     obs = observations[i];
     min_distance = 0.0;
-    for (int j=0 ; j<predicted.size() ; j++) {
-      pred = predicted[i];
+    for (int j=0 ; j<predicted.size() ; ++j) {
+      pred = predicted[j];
       distance = dist(obs.x, obs.y, pred.x, pred.y);
       // Update the closest predicted measurement
       if ( (j==0) || (distance < min_distance) ) {
@@ -103,6 +103,7 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
       }
     }
     // Decide the closest predicted measurement and store its id
+    cout << id << " is closest to observation[" << i << "]" << endl;
     observations[i].id = id;
   }
 
@@ -124,7 +125,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 
   double gauss_norm = 1.0 / (2.0 * M_PI * std_landmark[0] * std_landmark[1]);
 
-  for (int i=0 ; i<num_particles ; i++ ) {  // Update the weight for each particles
+  for (int i=0 ; i<num_particles ; ++i ) {  // Update the weight for each particles
     double x_p = particles[i].x;
     double y_p = particles[i].y;
     double theta_p = particles[i].theta;
@@ -132,15 +133,15 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     // Converting landmark observations given i the VEHICLE's coordinate system to the MAP's coordinate system.
     vector<LandmarkObs> observations_t;
 
-    for (int j=0 ; j<observations.size() ; j++) {
-      double x_map = observations[j].x * cos(theta_p) - observations[j].y * sin(theta_p) + x_p;
-      double y_map = observations[j].x * sin(theta_p) - observations[j].y + cos(theta_p) + y_p;
+    for (int j=0 ; j<observations.size() ; ++j) {
+      double x_map = (cos(theta_p) * observations[j].x) - (sin(theta_p) * observations[j].y) + x_p;
+      double y_map = (sin(theta_p) * observations[j].x) + (cos(theta_p) * observations[j].y) + y_p;
       observations_t.push_back(LandmarkObs{observations[j].id, x_map, y_map});
     }
 
     vector<LandmarkObs> predicted;
 
-    for (int j=0 ; j<map_landmarks.landmark_list.size(); j++) {
+    for (int j=0 ; j<map_landmarks.landmark_list.size(); ++j) {
       double x_l = map_landmarks.landmark_list[j].x_f;
       double y_l = map_landmarks.landmark_list[j].y_f;
       int id_l = map_landmarks.landmark_list[j].id_i;
@@ -154,7 +155,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 
     particles[i].weight = 1.0;
 
-    for (int j=0 ; j<observations_t.size(); j++) {
+    for (int j=0 ; j<observations_t.size(); ++j) {
       double x_obs = observations_t[j].x;
       double y_obs = observations_t[j].y;
 
@@ -162,7 +163,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 
       double x_pred;
       double y_pred;
-      for (int k=0 ; k<predicted.size() ; k++) {
+      for (int k=0 ; k<predicted.size() ; ++k) {
         if (predicted[k].id == id_associated) {
           cout << "Debug : associated observation is id: " << predicted[k].id << endl ;
           x_pred = predicted[k].x;
@@ -188,13 +189,13 @@ void ParticleFilter::resample() {
 
   // get all the weights for generating distribution
   vector<double> weights;
-  for (int i=0 ; i<num_particles ; i++) {
+  for (int i=0 ; i<num_particles ; ++i) {
     weights.push_back(particles[i].weight);
   }
 
   random_device rd;
   default_random_engine gen(rd());
-  for (int i=0 ; i<num_particles ; i++) {
+  for (int i=0 ; i<num_particles ; ++i) {
     discrete_distribution<int> resampling(weights.begin(), weights.end());
     resampled_particles.push_back(particles[resampling(gen)]);
   }
