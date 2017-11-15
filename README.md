@@ -24,4 +24,4 @@ The compiled program which is in `build` received the observations of landmarks 
 
 The program was estimating the position of the vehicle well during the entire simulation as you can see in the following figure.
 
-![alt_text][image1]
+![alt_text][image2]
