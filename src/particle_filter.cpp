@@ -103,7 +103,6 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
       }
     }
     // Decide the closest predicted measurement and store its id
-    cout << id << " is closest to observation[" << i << "]" << endl;
     observations[i].id = id;
   }
 
@@ -111,17 +110,9 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 
 void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], 
 		const std::vector<LandmarkObs> &observations, const Map &map_landmarks) {
-  // 2) Update the weights of each particle using a multivariate Gaussian distributtion.
-	// TODO: Update the weights of each particle using a mult-variate Gaussian distribution. You can read
-	//   more about this distribution here: https://en.wikipedia.org/wiki/Multivariate_normal_distribution
-	// NOTE: The observations are given in the VEHICLE'S coordinate system. Your particles are located
-	//   according to the MAP'S coordinate system. You will need to transform between the two systems.
-	//   Keep in mind that this transformation requires both rotation AND translation (but no scaling).
-	//   The following is a good resource for the theory:
-	//   https://www.willamette.edu/~gorr/classes/GeneralGraphics/Transforms/transforms2d.htm
-	//   and the following is a good resource for the actual equation to implement (look at equation 
-	//   3.33
-	//   http://planning.cs.uiuc.edu/node99.html
+  // - Transform the observations in the VEHICLE's coordinate system to MAP's coordinate
+  // - Associate transformed observation with a landmark
+  // - Update the weights of each particle using a multivariate Gaussian distributtion.
 
   double gauss_norm = 1.0 / (2.0 * M_PI * std_landmark[0] * std_landmark[1]);
 
@@ -130,7 +121,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     double y_p = particles[i].y;
     double theta_p = particles[i].theta;
 
-    // Converting landmark observations given i the VEHICLE's coordinate system to the MAP's coordinate system.
+    // Transforming landmark observations
     vector<LandmarkObs> observations_t;
 
     for (int j=0 ; j<observations.size() ; ++j) {
@@ -141,12 +132,12 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 
     vector<LandmarkObs> predicted;
 
+    // Concern only the observation within the range of sensor
     for (int j=0 ; j<map_landmarks.landmark_list.size(); ++j) {
       double x_l = map_landmarks.landmark_list[j].x_f;
       double y_l = map_landmarks.landmark_list[j].y_f;
       int id_l = map_landmarks.landmark_list[j].id_i;
 
-      //if ( (fabs(x_l - x_p) <= sensor_range) && (fabs(y_l - y_p) <= sensor_range) )
       if ( dist(x_l, y_l, x_p, y_p) <= sensor_range ) 
         predicted.push_back(LandmarkObs{id_l, x_l, y_l});
     }
@@ -165,16 +156,12 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
       double y_pred;
       for (int k=0 ; k<predicted.size() ; ++k) {
         if (predicted[k].id == id_associated) {
-          cout << "Debug : associated observation is id: " << predicted[k].id << endl ;
           x_pred = predicted[k].x;
           y_pred = predicted[k].y;
         }
       }
 
       double exponent = pow((x_obs-x_pred),2)/(2*pow(std_landmark[0],2)) + pow((y_obs-y_pred),2)/(2*pow(std_landmark[1],2));
-      //-- debug 
-      cout << "Debug : " << (gauss_norm * exp(-exponent)) << endl ;
-      //--
       particles[i].weight *= (gauss_norm * exp(-exponent));
     }
   }
